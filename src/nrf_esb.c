@@ -8,9 +8,11 @@ K_MSGQ_DEFINE(rx_queue, sizeof(struct esb_payload), RX_QUEUE_SIZE, 4);
 
 int esb_initialize(void)
 {
-    uint8_t base0[4] = {0xC2, 0xC2, 0xC2, 0x08}; //4 bytes: Base address
+    // robot addresses: pololu 8: 0x08, pololu 10: 0x10 Base address ending
+    // Zumo 0x01
+    uint8_t base0[4] = {0xC2, 0xC2, 0xC2, 0x08}; // 4 bytes: Base address
     uint8_t base1[4] = {0xE6, 0xE6, 0xE6, 0xEA};
-    uint8_t prefix[8] = {0xE7, 0, 0, 0, 0, 0, 0, 0}; //1 byte prefiz
+    uint8_t prefix[8] = {0xE7, 0, 0, 0, 0, 0, 0, 0}; // 1 byte prefiz
 
     struct esb_config cfg = ESB_DEFAULT_CONFIG;
     cfg.protocol = ESB_PROTOCOL_ESB_DPL;
@@ -31,7 +33,8 @@ void esb_send_async(const struct esb_payload *src)
 {
     struct esb_payload tx = {0};
     memcpy(&tx, src, sizeof(struct esb_payload));
-    if (k_msgq_put(&tx_queue, &tx, K_NO_WAIT) != 0) {
+    if (k_msgq_put(&tx_queue, &tx, K_NO_WAIT) != 0)
+    {
         LOG_WRN("TX queue full, drop");
     }
 }
@@ -48,17 +51,18 @@ struct esb_payload rx_payload;
 
 void event_handler(struct esb_evt const *event)
 {
-    switch (event->evt_id) {
+    switch (event->evt_id)
+    {
     case ESB_EVENT_TX_SUCCESS:
         // LOG_DBG("TX SUCCESS");
-        leds_update(0x02);  // Green LED (bit 1)
+        leds_update(0x02); // Green LED (bit 1)
         break;
     case ESB_EVENT_TX_FAILED:
         // LOG_WRN("TX FAILED");
-        leds_update(0x01);  // Red LED (bit 0)
+        leds_update(0x01); // Red LED (bit 0)
         break;
     case ESB_EVENT_RX_RECEIVED:
-        leds_update(0x04);  // Blue LED (bit 2)
+        leds_update(0x04); // Blue LED (bit 2)
         if (esb_read_rx_payload(&rx_payload) == 0)
             k_msgq_put(&rx_queue, &rx_payload, K_NO_WAIT);
         break;
